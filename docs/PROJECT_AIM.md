@@ -31,16 +31,19 @@ traffic between hosts can be inspected visually.
    proportional to the raw counts — an edge with 1000 connections is one
    rank above an edge with 3 connections, not 300× wider.
 
-## Current implementation (v0.1.0)
+## Current implementation (v0.2.0)
 
 A `vpc_graph` Python package with a CLI:
 
 ```bash
-python -m vpc_graph <flow-log-file> -o vpc_graph.html
+python -m vpc_graph <flow-log-file-or-folder> -o vpc_graph.html
 ```
 
-It parses flow log records, aggregates them into
-`(src_ip, dst_ip, dst_port)` edges, builds a `networkx.MultiDiGraph`
-with rank-based widths, and renders a self-contained interactive HTML
-page (pyvis/vis.js). Sample input lives in
-`sample_data/sample_flow_log.txt`; unit tests live in `tests/`.
+Inputs can be plain log files or folder trees laid out as
+`<vpc-id>/<year>/<month>/<day>/*.log` (each day folder holding many
+minute-chunk `.log` files). It parses flow log records, aggregates them
+into `(src_ip, dst_ip, dst_port)` edges, builds a
+`networkx.MultiDiGraph` with rank-based widths, and renders a
+self-contained interactive HTML page (pyvis/vis.js). Sample inputs live
+in `sample_data/` (single file and folder tree); unit tests live in
+`tests/`.

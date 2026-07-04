@@ -24,11 +24,20 @@ pip install -r requirements.txt        # or: pip install .
 ## Usage
 
 ```bash
+# one or more log files
 python -m vpc_graph sample_data/sample_flow_log.txt -o vpc_graph.html
+
+# or a folder tree: <vpc-id>/<year>/<month>/<day>/*.log
+# (each day folder may hold many minute-chunk .log files)
+python -m vpc_graph sample_data/flow_logs -o vpc_graph.html
 ```
 
 Then open `vpc_graph.html` in a browser. The file is self-contained; drag
 nodes around, hover edges for full details.
+
+Files and folders can be mixed on the command line; all discovered logs
+are aggregated into a single graph. Log files at the wrong depth or under
+non-date folders are skipped with a warning.
 
 Useful options:
 
@@ -55,6 +64,7 @@ Project layout:
 
 ```
 vpc_graph/
+  discovery.py      # folder trees -> list of log files
   parser.py         # flow log lines -> FlowRecord
   aggregator.py     # FlowRecords -> ConnectionEdge per (src, dst, dst_port)
   graph_builder.py  # ConnectionEdges -> networkx MultiDiGraph (rank widths)

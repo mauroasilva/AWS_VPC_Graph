@@ -90,3 +90,47 @@ to fix.
 - The `docs/` files are part of the deliverable — when you change
   behaviour, update PROJECT_AIM.md (if invariants move), PLAN.md (if the
   architecture moves) and append your decisions here.
+
+---
+
+## v0.2.0 — folder-tree input
+
+Requested by the user: accept a folder laid out as
+`<vpc-id>/<year>/<month>/<day>/<vpc files>.log`, where each day folder
+holds multiple `.log` files broken into minute chunks of the day.
+
+### Decisions made automatically
+
+- **One combined graph.** All discovered chunks — across days and across
+  VPC-id folders — are aggregated into a single graph, so flows split
+  over chunk boundaries merge into the same edges (verified by a test:
+  source ports spread over three chunk files still produce one
+  `21251 - 22353` edge). If per-VPC graphs are ever wanted, split the
+  file list returned by `discover_log_files()` on the first path
+  component and run the pipeline once per group.
+- **Strict depth, lenient content.** Only `*/*/*/*/*.log` paths with a
+  plausible `<year>/<month>/<day>` (4-digit year, month 1-12, day 1-31)
+  are accepted. Anything else — `.log` files at other depths, non-date
+  folders, non-`.log` files — is skipped with a warning instead of
+  aborting, consistent with the parser's error philosophy.
+- **No filename assumptions.** Minute-chunk file names are not parsed;
+  ordering and timestamps come from the folder dates and the records'
+  own `start`/`end` fields, so any chunk naming scheme works.
+- **Deterministic order.** Files are processed sorted by VPC, then date,
+  then chunk name (aggregation is order-independent, but deterministic
+  runs make debugging easier).
+- **Mixing allowed.** CLI positional args may be any mix of files and
+  folders (`expand_inputs()` in `vpc_graph/discovery.py`).
+- The `vpc-id` folder name is currently *not* attached to nodes/edges —
+  records carry no VPC attribution. Revisit if multi-VPC datasets need
+  per-VPC filtering in the visualisation.
+
+### Notes for future agents
+
+- Sample folder tree: `sample_data/flow_logs/` (one VPC, two days, three
+  minute chunks). Expected output: 4 nodes, 3 edges, 6 connections in
+  3 files.
+- Discovery tests live in `tests/test_discovery.py` (31 tests total in
+  the suite as of v0.2.0).
+- Gzipped chunks (`.log.gz`) are still not supported — decompress first
+  or extend `parse_file()` with `gzip.open` if needed.

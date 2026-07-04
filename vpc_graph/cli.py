@@ -15,6 +15,7 @@ from typing import Optional, Sequence
 import networkx as nx
 
 from vpc_graph.aggregator import aggregate
+from vpc_graph.discovery import expand_inputs
 from vpc_graph.graph_builder import (
     DEFAULT_MAX_WIDTH,
     DEFAULT_MIN_WIDTH,
@@ -34,9 +35,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "logfiles",
+        "inputs",
         nargs="+",
-        help="one or more VPC flow log files (default v2 format, or with a header line)",
+        metavar="FILE_OR_DIR",
+        help=(
+            "VPC flow log files, and/or folders laid out as "
+            "<vpc-id>/<year>/<month>/<day>/*.log (each day folder may hold "
+            "many minute-chunk .log files; all are processed)"
+        ),
     )
     parser.add_argument(
         "-o",
@@ -90,8 +96,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         format="%(levelname)s %(name)s: %(message)s",
     )
 
+    logfiles = expand_inputs(args.inputs)
+    if not logfiles:
+        print("No log files to process.", file=sys.stderr)
+        return 1
+
     def records():
-        for path in args.logfiles:
+        for path in logfiles:
             yield from parse_file(path, fields=args.fields)
 
     edges = aggregate(records(), action=args.action)
@@ -104,7 +115,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     output = render_html(graph, args.output)
     print(
         f"Wrote {output} ({graph.number_of_nodes()} nodes, "
-        f"{graph.number_of_edges()} edges from {sum(e.connection_count for e in kept)} connections)"
+        f"{graph.number_of_edges()} edges from "
+        f"{sum(e.connection_count for e in kept)} connections "
+        f"in {len(logfiles)} file(s))"
     )
 
     if args.graphml:

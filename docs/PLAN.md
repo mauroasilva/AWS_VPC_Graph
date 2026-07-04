@@ -10,8 +10,11 @@ A four-stage pipeline, each stage a separate module so it can be replaced
 or extended independently:
 
 ```
-flow log file(s)
+flow log file(s) and/or folder tree(s)
       |
+      v
+ discovery.py     folders laid out as <vpc-id>/<year>/<month>/<day>/*.log
+      |             -> flat, sorted list of log files (plain files pass through)
       v
  parser.py        lines -> FlowRecord (src/dst IP+port, protocol, start, end, action)
       |
@@ -29,6 +32,17 @@ flow log file(s)
 script) wires the stages together.
 
 ## Stage details
+
+### 0. Input discovery (`vpc_graph/discovery.py`)
+- CLI inputs may be plain log files, folders, or a mix; folders are
+  expected to follow the ``<vpc-id>/<year>/<month>/<day>/*.log`` layout,
+  where each day folder holds multiple ``.log`` files (minute chunks of
+  the day).
+- All matching chunks are collected into one flat, sorted list (by VPC,
+  then date, then chunk name) and fed to the parser, so flows split
+  across chunk files aggregate into the same edges.
+- ``.log`` files under non-date folders or at the wrong depth are skipped
+  with a warning rather than failing the run.
 
 ### 1. Parsing (`vpc_graph/parser.py`)
 - Accepts the default VPC Flow Log **version 2** space-separated format:
