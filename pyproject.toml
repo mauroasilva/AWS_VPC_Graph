@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vpc-graph"
+version = "0.1.0"
+description = "Build an interactive connection graph from AWS VPC Flow Logs"
+requires-python = ">=3.9"
+dependencies = [
+    "networkx>=3.0",
+    "pyvis>=0.3.2",
+]
+
+[project.scripts]
+vpc-graph = "vpc_graph.cli:main"
+
+[tool.setuptools]
+packages = ["vpc_graph"]
